@@ -104,12 +104,10 @@ public class GoogleSpreadSheetService
                 ClientSecret = clientSecret
             };
 
-            // GoogleWebAuthorizationBroker sẽ:
-            // - Lần đầu: Mở browser → user đăng nhập → lưu token vào thư mục "token_store"
-            // - Lần sau: Dùng cached token (tự refresh nếu hết hạn)
+            // Yêu cầu thêm quyền DriveFile để upload ảnh
             var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                 clientSecrets,
-                new[] { SheetsService.Scope.Spreadsheets },
+                new[] { SheetsService.Scope.Spreadsheets, Google.Apis.Drive.v3.DriveService.Scope.DriveFile },
                 "user",
                 CancellationToken.None,
                 new FileDataStore("token_store", true)
@@ -121,7 +119,13 @@ public class GoogleSpreadSheetService
 
             var sheetName = SheetNameMap[sheetType];
 
-            var service = new SheetsService(new BaseClientService.Initializer
+            var sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "Dam_Bao_Chat_Luong_Test"
+            });
+
+            var driveService = new Google.Apis.Drive.v3.DriveService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = credential,
                 ApplicationName = "Dam_Bao_Chat_Luong_Test"
@@ -132,23 +136,45 @@ public class GoogleSpreadSheetService
                 .GroupBy(r => r.SpreadsheetRow)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
+            // Tạo hoặc lấy ID thư mục lưu ảnh trên Drive để khỏi bừa bộn
+            var folderId = await GetOrCreateDriveFolderAsync("Dam_Bao_Chat_Luong_Screenshots", driveService);
+
             foreach (var (row, rowResults) in resultsByRow)
             {
                 var notesContent = string.Join("\n\n---\n\n",
                     rowResults.Select(r => r.ToNotesString()));
 
-                // Cột Notes = cột J (column index 10 in 0-based, 'J' in A1 notation)
-                var range = $"'{sheetName}'!J{row}";
+                var rowValues = new List<object> { notesContent };
+
+                // Upload từng screenshot lên Drive và thêm hàm =IMAGE() vào các cột kế tiếp
+                foreach (var r in rowResults)
+                {
+                    if (!string.IsNullOrEmpty(r.ScreenshotPath) && System.IO.File.Exists(r.ScreenshotPath))
+                    {
+                        var fileId = await UploadScreenshotToDriveAsync(r.ScreenshotPath, driveService, folderId);
+                        if (!string.IsNullOrEmpty(fileId))
+                        {
+                            // Hàm hiển thị ảnh trực tiếp trên Sheet
+                            rowValues.Add($"=IMAGE(\"https://drive.google.com/uc?export=view&id={fileId}\")");
+                        }
+                    }
+                }
+
+                // Cột Notes bắt đầu từ J, tính toán range cuối dựa trên số lượng ảnh
+                var endCol = (char)('J' + rowValues.Count - 1);
+                var range = $"'{sheetName}'!J{row}:{endCol}{row}";
+                
                 var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
                 {
-                    Values = new List<IList<object>> { new List<object> { notesContent } }
+                    Values = new List<IList<object>> { rowValues }
                 };
 
-                var request = service.Spreadsheets.Values.Update(valueRange, _spreadsheetId, range);
-                request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                var request = sheetsService.Spreadsheets.Values.Update(valueRange, _spreadsheetId, range);
+                // Bắt buộc dùng USER_ENTERED thì hàm =IMAGE mới hoạt động
+                request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
                 await request.ExecuteAsync();
 
-                Console.WriteLine($"  ✅ Đã ghi kết quả vào {range}");
+                Console.WriteLine($"  ✅ Đã ghi kết quả và ảnh vào dải ô {range}");
             }
 
             return true;
@@ -159,6 +185,96 @@ public class GoogleSpreadSheetService
             Console.WriteLine($"  ❌ Lỗi khi ghi spreadsheet: {ex.Message}");
             Console.ResetColor();
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Tìm hoặc tạo thư mục trên Google Drive
+    /// </summary>
+    private async Task<string?> GetOrCreateDriveFolderAsync(string folderName, Google.Apis.Drive.v3.DriveService driveService)
+    {
+        try
+        {
+            var request = driveService.Files.List();
+            request.Q = $"mimeType='application/vnd.google-apps.folder' and name='{folderName}' and trashed=false";
+            request.Spaces = "drive";
+            request.Fields = "files(id, name)";
+            var result = await request.ExecuteAsync();
+
+            if (result.Files != null && result.Files.Count > 0)
+            {
+                return result.Files[0].Id;
+            }
+
+            Console.WriteLine($"  📁 Đang tạo thư mục mới trên Drive: {folderName}...");
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            {
+                Name = folderName,
+                MimeType = "application/vnd.google-apps.folder"
+            };
+            var createRequest = driveService.Files.Create(fileMetadata);
+            createRequest.Fields = "id";
+            var file = await createRequest.ExecuteAsync();
+
+            return file.Id;
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"  ⚠️ Lỗi tạo folder: {ex.Message} (Sẽ upload ra thư mục gốc)");
+            Console.ResetColor();
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Upload file ảnh lên Google Drive và trả về ID của file
+    /// </summary>
+    private async Task<string?> UploadScreenshotToDriveAsync(string localPath, Google.Apis.Drive.v3.DriveService driveService, string? folderId)
+    {
+        try
+        {
+            Console.WriteLine($"  ☁️ Đang upload ảnh lên Drive: {System.IO.Path.GetFileName(localPath)}...");
+            
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+            {
+                Name = System.IO.Path.GetFileName(localPath),
+                MimeType = "image/png"
+            };
+
+            if (!string.IsNullOrEmpty(folderId))
+            {
+                fileMetadata.Parents = new List<string> { folderId };
+            }
+
+            Google.Apis.Drive.v3.FilesResource.CreateMediaUpload request;
+            using (var stream = new System.IO.FileStream(localPath, FileMode.Open))
+            {
+                request = driveService.Files.Create(fileMetadata, stream, "image/png");
+                request.Fields = "id";
+                await request.UploadAsync();
+            }
+
+            var file = request.ResponseBody;
+            if (file == null) return null;
+
+            // Mở quyền truy cập cho tất cả mọi người (ai có link đều xem được) để hàm =IMAGE hoạt động
+            var permission = new Google.Apis.Drive.v3.Data.Permission
+            {
+                Type = "anyone",
+                Role = "reader"
+            };
+            await driveService.Permissions.Create(permission, file.Id).ExecuteAsync();
+
+            Console.WriteLine($"  ✅ Upload ảnh thành công!");
+            return file.Id;
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"  ❌ Lỗi upload Drive: {ex.Message}");
+            Console.ResetColor();
+            return null;
         }
     }
 
