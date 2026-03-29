@@ -14,6 +14,11 @@ public class TestCaseModel
     /// Dòng bắt đầu của test case trong spreadsheet (1-indexed) để ghi kết quả vào cột Notes
     /// </summary>
     public int SpreadsheetStartRow { get; set; }
+    /// <summary>
+    /// Dòng chứa Expected Result trong spreadsheet (1-indexed) — ngang hàng với Step cuối cùng
+    /// Actual Result, Status, Notes sẽ được ghi vào dòng này
+    /// </summary>
+    public int SpreadsheetExpectedResultRow { get; set; }
 }
 
 public class TestStep

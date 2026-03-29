@@ -442,6 +442,8 @@ public class GoogleSpreadSheetService
                 if (!string.IsNullOrEmpty(step.ExpectedResult))
                 {
                     currentTestCase.ExpectedResult = step.ExpectedResult;
+                    // Ghi nhận dòng chứa Expected Result (ngang hàng với step này)
+                    currentTestCase.SpreadsheetExpectedResultRow = i + 1;
                 }
             }
         }

@@ -82,7 +82,7 @@ public class SeleniumTestService : IDisposable
             TestObjective = testCase.TestObjective,
             Role = loginData.Role,
             ExpectedResult = testCase.ExpectedResult,
-            SpreadsheetRow = testCase.SpreadsheetStartRow,
+            SpreadsheetRow = testCase.SpreadsheetExpectedResultRow,
             Timestamp = DateTime.Now
         };
 
