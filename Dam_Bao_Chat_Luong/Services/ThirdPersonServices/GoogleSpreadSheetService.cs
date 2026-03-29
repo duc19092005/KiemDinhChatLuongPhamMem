@@ -141,12 +141,16 @@ public class GoogleSpreadSheetService
 
             foreach (var (row, rowResults) in resultsByRow)
             {
-                var notesContent = string.Join("\n\n---\n\n",
-                    rowResults.Select(r => r.ToNotesString()));
+                // === Cột J: Actual Result ===
+                var actualResultContent = string.Join("\n---\n",
+                    rowResults.Select(r => $"[{r.Role ?? "N/A"}]: {r.ActualResult}"));
 
-                var rowValues = new List<object> { notesContent };
+                // === Cột K: Status (nếu có bất kỳ FAIL/ERROR → FAIL, ngược lại PASS) ===
+                var hasFailOrError = rowResults.Any(r => r.Status == "FAIL" || r.Status == "ERROR");
+                var statusContent = hasFailOrError ? "FAIL" : "PASS";
 
-                // Upload từng screenshot lên Drive và thêm hàm =IMAGE() vào các cột kế tiếp
+                // === Cột L: Notes (ảnh screenshot) ===
+                var imageFormulas = new List<string>();
                 foreach (var r in rowResults)
                 {
                     if (!string.IsNullOrEmpty(r.ScreenshotPath) && System.IO.File.Exists(r.ScreenshotPath))
@@ -154,16 +158,28 @@ public class GoogleSpreadSheetService
                         var fileId = await UploadScreenshotToDriveAsync(r.ScreenshotPath, driveService, folderId);
                         if (!string.IsNullOrEmpty(fileId))
                         {
-                            // Hàm hiển thị ảnh trực tiếp trên Sheet
-                            rowValues.Add($"=IMAGE(\"https://drive.google.com/uc?export=view&id={fileId}\")");
+                            imageFormulas.Add($"https://drive.google.com/uc?export=view&id={fileId}");
                         }
                     }
                 }
 
-                // Cột Notes bắt đầu từ J, tính toán range cuối dựa trên số lượng ảnh
-                var endCol = (char)('J' + rowValues.Count - 1);
-                var range = $"'{sheetName}'!J{row}:{endCol}{row}";
-                
+                // Nội dung cột Notes: nếu có ảnh thì dùng =IMAGE(), nếu không thì ghi thông tin thời gian + role
+                string notesContent;
+                if (imageFormulas.Count > 0)
+                {
+                    // Chỉ lấy ảnh đầu tiên cho =IMAGE() (Sheets chỉ hiển thị 1 ảnh per cell)
+                    // Các link ảnh còn lại ghi thêm bên dưới
+                    notesContent = $"=IMAGE(\"{imageFormulas[0]}\")";
+                }
+                else
+                {
+                    notesContent = string.Join("\n", rowResults.Select(r => r.ToNotesString()));
+                }
+
+                // Ghi vào 3 cột J, K, L
+                var rowValues = new List<object> { actualResultContent, statusContent, notesContent };
+                var range = $"'{sheetName}'!J{row}:L{row}";
+
                 var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
                 {
                     Values = new List<IList<object>> { rowValues }
@@ -174,7 +190,7 @@ public class GoogleSpreadSheetService
                 request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
                 await request.ExecuteAsync();
 
-                Console.WriteLine($"  ✅ Đã ghi kết quả và ảnh vào dải ô {range}");
+                Console.WriteLine($"  ✅ Đã ghi: Row {row} | Actual Result → J | Status → K ({statusContent}) | Notes → L");
             }
 
             return true;

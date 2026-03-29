@@ -22,14 +22,8 @@ public class TestResult
         var lines = new List<string>
         {
             $"[{Timestamp:yyyy-MM-dd HH:mm:ss}]",
-            $"Role: {Role ?? "N/A"}",
-            $"Status: {Status} {(IsMatch ? "✅" : "❌")}",
-            $"Expected: {ExpectedResult}",
-            $"Actual: {ActualResult}"
+            $"Role: {Role ?? "N/A"}"
         };
-
-        if (!string.IsNullOrEmpty(ScreenshotPath))
-            lines.Add($"Screenshot: {ScreenshotPath}");
 
         return string.Join("\n", lines);
     }
