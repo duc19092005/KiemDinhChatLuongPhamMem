@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.2" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Dam_Bao_Chat_Luong\Dam_Bao_Chat_Luong.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="..\Dam_Bao_Chat_Luong\appsettings.Development.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+</Project>

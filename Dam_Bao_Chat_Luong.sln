@@ -1,6 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dam_Bao_Chat_Luong", "Dam_Bao_Chat_Luong\Dam_Bao_Chat_Luong.csproj", "{2900700B-35EC-4D0B-B679-152A86AB5996}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dam_Bao_Chat_Luong.Tests", "Dam_Bao_Chat_Luong.Tests\Dam_Bao_Chat_Luong.Tests.csproj", "{DFAC70E3-F367-46BA-8F8B-B066BA6298F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +15,9 @@ Global
 		{2900700B-35EC-4D0B-B679-152A86AB5996}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2900700B-35EC-4D0B-B679-152A86AB5996}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2900700B-35EC-4D0B-B679-152A86AB5996}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFAC70E3-F367-46BA-8F8B-B066BA6298F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFAC70E3-F367-46BA-8F8B-B066BA6298F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFAC70E3-F367-46BA-8F8B-B066BA6298F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFAC70E3-F367-46BA-8F8B-B066BA6298F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

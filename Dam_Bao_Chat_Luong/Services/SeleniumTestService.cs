@@ -74,7 +74,7 @@ public class SeleniumTestService : IDisposable
     /// <summary>
     /// Thực thi 1 test case đăng nhập cụ thể
     /// </summary>
-    private TestResult ExecuteLoginTest(LoginTestData loginData, TestCaseModel testCase)
+    public TestResult ExecuteLoginTest(LoginTestData loginData, TestCaseModel testCase)
     {
         var result = new TestResult
         {
