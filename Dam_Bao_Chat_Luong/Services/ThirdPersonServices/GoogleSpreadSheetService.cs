@@ -7,6 +7,7 @@ using Google.Apis.Services;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Util.Store;
 using Microsoft.Extensions.Configuration;
+using TestResult = Dam_Bao_Chat_Luong.Models.TestResult;
 
 namespace Dam_Bao_Chat_Luong.Services.ThirdPersonServices;
 

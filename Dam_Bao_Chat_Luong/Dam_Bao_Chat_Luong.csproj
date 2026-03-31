@@ -9,11 +9,14 @@
 
     <ItemGroup>
       <PackageReference Include="Google.Apis.Drive.v3" Version="1.73.0.4081" />
-      <PackageReference Include="Selenium.WebDriver" Version="4.41.0" />
-      <PackageReference Include="Selenium.Support" Version="4.41.0" />
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.68.0.3525" />
+      <PackageReference Include="Microsoft.Office.Interop.Excel" Version="16.0.18925.20022" />
+      <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+      <PackageReference Include="Selenium.Support" Version="4.40.0" />
+      <PackageReference Include="Selenium.WebDriver" Version="4.40.0" />
+      <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="144.0.7559.13300" />
     </ItemGroup>
 
     <ItemGroup>
