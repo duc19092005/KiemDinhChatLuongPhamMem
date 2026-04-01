@@ -186,8 +186,7 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
                     string actualColor = icon.GetCssValue("color");
                     string colorNoSpaces = actualColor.Replace(" ", "");
                     string errorMessage = $"Icon thứ {iconIndex} không có màu cam. Màu thực tế Selenium đọc được là: {actualColor}";
-                    Assert.IsTrue(colorNoSpaces.Contains("255, 152, 0, 1)"), errorMessage);
-
+                    Assert.IsTrue(colorNoSpaces.Contains("255,152,0,1)"), errorMessage);
                     iconIndex++;
                 }
 

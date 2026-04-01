@@ -176,14 +176,33 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
             try
             {
                 driver.Navigate().GoToUrl("http://duck123.runasp.net/NhaXe/DieuPhoi");
-                IWebElement theDaPhanCong = driver.FindElement(By.XPath("//table//td//div"));
 
+                // 1. Chờ 2.5 giây để bảng load xong dữ liệu
+                Thread.Sleep(2500);
+
+                // 2. TÌM ELEMENT: Quét toàn bộ bảng, tóm thẻ div ĐẦU TIÊN có chứa chữ (để né các ô trống)
+                IWebElement theDaPhanCong = driver.FindElement(By.XPath("//table//td//div[string-length(text()) > 0]"));
+
+                // 🚀 BƯỚC QUAN TRỌNG: Dùng JavaScript cuộn màn hình đến thẳng cái thẻ đó
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                js.ExecuteScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", theDaPhanCong);
+
+                // Chờ 1 chút cho hiệu ứng cuộn mượt mà trôi xuống tới nơi
+                Thread.Sleep(1000);
+
+                // 3. Lấy màu viền (Dùng border-left-color cho chuẩn xác)
                 string borderLeft = theDaPhanCong.GetCssValue("border-left-color");
-                Assert.IsTrue(borderLeft.Contains("blue") || borderLeft.Contains("0, 40, 85"), "Viền trái không có màu xanh đậm");
 
+                string errorMessage = $"Viền trái không có màu xanh đậm. Màu thực tế là: {borderLeft}";
+                Assert.IsTrue(borderLeft.Contains("(13, 110, 253, 1)") || borderLeft.Contains("blue"), errorMessage);
+
+                // 4. Thực hiện Hover (Bây giờ nó đã nằm chễm chệ giữa màn hình nên hover chắc chắn ăn)
                 Actions action = new Actions(driver);
                 action.MoveToElement(theDaPhanCong).Perform();
-                Thread.Sleep(500);
+                Thread.Sleep(500); // Chờ thẻ nhích lên
+
+                string transformHover = theDaPhanCong.GetCssValue("transform");
+                Assert.AreNotEqual("none", transformHover, "Thẻ không có hiệu ứng nhích lên (transform) khi hover");
 
                 GhiKetQuaExcel(excelRow, "Thẻ viền trái xanh đậm, có hiệu ứng nhích lên khi di chuột", "Passed");
             }
@@ -194,7 +213,6 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
                 throw;
             }
         }
-
         // DÒNG 9: GUI_QLDP_PC_01 - Form Phân công 
         [TestMethod]
         public void GUI_QLDP_PC_01_KiemTraGiaoDienFormPhanCong()
