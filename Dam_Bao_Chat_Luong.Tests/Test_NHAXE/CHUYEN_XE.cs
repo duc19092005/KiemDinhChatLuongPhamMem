@@ -22,7 +22,7 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
             driver.Manage().Window.Maximize();
         }
 
-        // Đăng nhập -> Thêm -> Search -> Sửa -> Xóa
+        // Luồng: Đăng nhập -> Thêm -> Search -> Sửa -> Xóa
         [TestMethod]
         public void LuongChay_CRUD_ChuyenXe_ToanDien()
         {
@@ -68,7 +68,7 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
 
                 driver.FindElement(By.Name("LoTrinhId")).SendKeys("VietNam - Campuchia");
                 driver.FindElement(By.Name("XeId")).SendKeys("70AA123");
-                driver.FindElement(By.Name("TuNgay")).SendKeys("02/04/2026");
+                driver.FindElement(By.Name("TuNgay")).SendKeys("01/20/2026");
                 driver.FindElement(By.Name("DenNgay")).SendKeys("03/04/2026");
                 driver.FindElement(By.Name("KhungGioTu")).SendKeys("07:00AM");
                 driver.FindElement(By.Name("KhungGioDen")).SendKeys("04:00PM");
@@ -100,7 +100,7 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
 
                 IWebElement btnTimKiem = driver.FindElement(By.XPath("/html/body/div/div/main/div[1]/div[2]/form/div/button"));
                 JsClick(btnTimKiem);
-                Thread.Sleep(1500);
+                Thread.Sleep(2500);
 
                 IWebElement table = driver.FindElement(By.TagName("table"));
                 Assert.IsNotNull(table, "Không hiển thị bảng ViewList");
@@ -119,8 +119,22 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
             int excelRow = 21;
             try
             {
-                driver.Navigate().GoToUrl("http://duck123.runasp.net/NhaXe/ChuyenXe/Edit/74e5d826");
+                driver.Navigate().GoToUrl("http://duck123.runasp.net/NhaXe/ChuyenXe");
                 Thread.Sleep(1500);
+
+                IWebElement menuDong9 = driver.FindElement(By.XPath("/html/body/div/div/main/div[1]/div[3]/div/div/div[2]/table/tbody/tr[9]/td[2]/div"));
+
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                js.ExecuteScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", menuDong9);
+
+                Thread.Sleep(1000);
+
+                JsClick(menuDong9);
+                Thread.Sleep(500); 
+
+                IWebElement btnSua = driver.FindElement(By.XPath("/html/body/div[1]/div/main/div[3]/div/div/div[3]/a[2]"));
+                JsClick(btnSua);
+                Thread.Sleep(1500); 
 
                 SelectElement selectLoTrinh = new SelectElement(driver.FindElement(By.Name("LoTrinhId")));
                 selectLoTrinh.SelectByText("Huflit Campuchia -> Bến xe Nhà Đức");
@@ -147,17 +161,27 @@ namespace Dam_Bao_Chat_Luong.Tests.Test_NHAXE
             try
             {
                 driver.Navigate().GoToUrl("http://duck123.runasp.net/NhaXe/ChuyenXe");
-                Thread.Sleep(1500);
 
-                IWebElement btnXoaDongDau = driver.FindElement(By.XPath("/html/body/div/div/main/div[1]/div[3]/div/div/div[2]/table/tbody/tr[3]/td[2]/div"));
-                JsClick(btnXoaDongDau);
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);
 
-                IWebElement btnXacNhanXoa = driver.FindElement(By.XPath("/html/body/div[1]/div/main/div[3]/div/div/div[3]/button"));
+                IWebElement menuDongDau = driver.FindElement(By.XPath("/html/body/div/div/main/div[1]/div[3]/div/div/div[2]/table/tbody/tr[9]/td[2]/div"));
+
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                js.ExecuteScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", menuDongDau);
+                Thread.Sleep(1000); 
+
+                JsClick(menuDongDau);
+                Thread.Sleep(500); 
+
+                IWebElement btnXoa = driver.FindElement(By.XPath("/html/body/div[1]/div/main/div[3]/div/div/div[3]/button"));
+                JsClick(btnXoa);
+                Thread.Sleep(1000); 
+
+                IWebElement btnXacNhanXoa = driver.FindElement(By.XPath("/html/body/div[1]/div/main/div[2]/div/div/form/div[3]/button[2]"));
                 JsClick(btnXacNhanXoa);
-                Thread.Sleep(1500);
+                Thread.Sleep(1500); 
 
-               GhiKetQuaExcel(excelRow, "Hiển thị thông báo: Đã xóa chuyến xe.", "Passed");
+                GhiKetQuaExcel(excelRow, "Hiển thị thông báo: Đã xóa chuyến xe.", "Passed");
             }
             catch (Exception ex)
             {
