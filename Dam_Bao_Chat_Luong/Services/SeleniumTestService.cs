@@ -2,6 +2,7 @@ using Dam_Bao_Chat_Luong.Models;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using TestResult = Dam_Bao_Chat_Luong.Models.TestResult;
 
 namespace Dam_Bao_Chat_Luong.Services;
 
