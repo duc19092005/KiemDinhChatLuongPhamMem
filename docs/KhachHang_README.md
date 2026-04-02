@@ -1,90 +1,84 @@
-# Test Khách Hàng — Hướng dẫn
+# Hướng dẫn Khởi chạy & Kiến trúc Automation Test - Phân hệ Khách Hàng
 
-## Cấu trúc thư mục
+Tài liệu này hướng dẫn cách cấu hình, kiến trúc và lệnh thực thi chuẩn xác cho các bài test tự động (Selenium) thuộc phân hệ Khách Hàng trong hệ thống Đặt Vé Xe.
 
-```
+---
+
+## 1. Cấu trúc mã nguồn
+
+Hệ thống Automation Test của Khách Hàng được thiết kế theo mô hình tách biệt dịch vụ (Service-Pattern) để dễ dàng bảo trì và tích hợp với Google Sheets:
+
+```text
 Dam_Bao_Chat_Luong/
 ├── Models/KhachHang/
-│   ├── KhachHangTestCaseModel.cs   # Model test case (multi-step, multi-row)
-│   └── KhachHangTestResult.cs      # Model kết quả test (per-step results)
+│   ├── KhachHangTestCaseModel.cs   # Model map với cấu trúc dòng/cột Google Spreadsheet
+│   └── KhachHangTestResult.cs      # Model kết quả test của từng bộ Step
 ├── Services/KhachHang/
-│   ├── KhachHangExcelReaderService.cs   # Đọc test cases từ Google Spreadsheet
-│   ├── KhachHangExcelWriterService.cs   # Ghi kết quả + merge cells + upload ảnh
-│   └── KhachHangSeleniumService.cs      # Selenium test runner (11 test cases)
+│   ├── KhachHangExcelReaderService.cs   # Đọc kịch bản đầu vào từ Google Sheets
+│   ├── KhachHangExcelWriterService.cs   # Cập nhật kết quả chi tiết, merge cell, upload hình ảnh báo cáo (Google Drive)
+│   └── KhachHangSeleniumService.cs      # Chứa "Bộ não" thao tác Automation (Chứa cả Fallback JS cho Click)
 
 Dam_Bao_Chat_Luong.Tests/KhachHang/
-├── DangKyTests.cs           # II.1_DK_01, II.1_DK_02
-├── ChuyenHuongTests.cs      # II.2_CH_01
-├── TimKiemTests.cs           # II.3_TK_01, II.3_TK_02, II.3_TK_03
-├── DatVeTests.cs             # II.4_CG_01, II.4_CG_02, II.4_TT_01, II.4_TT_02
-├── QuanLyTaiKhoanTests.cs   # II.5_LS_01, II.5_CN_01, II.5_ECN_01
-├── FlowDatVeTests.cs        # II.6_FLOW_01, II.6_FLOW_02 (E2E Flow đặt vé A→Z)
-└── README.md                 # File này
+├── DangKyTests.cs           # Test đăng ký mới, trùng email (II.1)
+├── ChuyenHuongTests.cs      # Test chuyển hướng login an toàn (II.2)
+├── TimKiemTests.cs          # Test logic bộ lọc tìm kiếm (II.3)
+├── DatVeTests.cs            # Test chọn ghế, tự động điền info, thanh toán (II.4)
+├── QuanLyTaiKhoanTests.cs   # Lịch sử, Xem thông tin, Sửa thông tin cá nhân (II.5)
+└── FlowDatVeTests.cs        # Mô phỏng liên hoàn E2E 8 bước thực tế (II.6)
 ```
 
-## Cách chạy test
+> **Lưu ý:** Trước đây dự án dùng file gộp Standalone `Gop_Test_FlowDatVe.cs`, nhưng hiện tại các logic cốt lõi như *Thuật toán Vượt chặn Click Ghế bằng JS* đều đã được hợp nhất chuẩn xác vào `KhachHangSeleniumService.cs` và các file Test Module riêng lẻ phía trên để đảm bảo kiến trúc sạch (Clean Architecture) và tối ưu khả năng bảo trì.
+
+---
+
+## 2. Danh sách Kịch bản (Test Cases)
+
+Toàn bộ 14 hàm Test Case liên quan đã hoàn thành bao gồm:
+
+| Phân hệ | Requirement ID | Test Case ID | Hàm trong Selenium Service | Mô tả kịch bản | Nơi thực thi (Class) |
+|---|---|---|---|---|---|
+| Đăng ký | II.1_DangKy | II.1_DK_01 | `Test_DK01` | Đăng ký tài khoản khách hàng thành công | DangKyTests.cs |
+| Đăng ký | II.1_DangKy | II.1_DK_02 | `Test_DK02` | Đăng ký thất bại do trùng Email/SĐT | DangKyTests.cs |
+| Chuyển hướng | II.2_ChuyenHuong | II.2_CH_01 | `Test_CH01` | Chuyển hướng đúng về trang đặt vé sau đăng nhập | ChuyenHuongTests.cs |
+| Tìm kiếm | II.3_TimKiem | II.3_TK_01 | `Test_TK01` | Tìm kiếm chuyến xe hợp lệ | TimKiemTests.cs |
+| Tìm kiếm | II.3_TimKiem | II.3_TK_02 | `Test_TK02` | Tìm kiếm với ngày đi trong quá khứ | TimKiemTests.cs |
+| Tìm kiếm | II.3_TimKiem | II.3_TK_03 | `Test_TK03` | Không tìm thấy chuyến xe (Trả về Empty) | TimKiemTests.cs |
+| **Đặt vé** | **II.4_DatVe** | **II.4_CG_01** | `Test_CG01` | **Chọn ghế trên sơ đồ và tính tiền tự động** | DatVeTests.cs |
+| **Đặt vé** | **II.4_DatVe** | **II.4_CG_02** | `Test_CG02` | **Không cho phép chọn ghế đã bán** | DatVeTests.cs |
+| **Đặt vé** | **II.4_DatVe** | **II.4_TT_01** | `Test_TT01` | **Thông tin hành khách được tự động điền** | DatVeTests.cs |
+| **Đặt vé** | **II.4_DatVe** | **II.4_TT_02** | `Test_TT02` | **Đặt vé và Thanh toán Momo thành công** | DatVeTests.cs |
+| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_LS_01 | `Test_LS01` | Xem lịch sử đặt vé | QuanLyTaiKhoanTests.cs |
+| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_CN_01 | `Test_CN01` | Xem thông tin cá nhân | QuanLyTaiKhoanTests.cs |
+| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_ECN01 | `Test_ECN01` | Chỉnh sửa thông tin cá nhân | QuanLyTaiKhoanTests.cs |
+| **Flow E2E** | **II.6_FlowDatVe** | **II.6_FLOW_01** | `Test_Flow_DatVe_E2E` | **Toàn trình: Đăng nhập → Chọn chuyến → Chọn ghế → Momo → Đăng xuất** | FlowDatVeTests.cs |
+
+---
+
+## 3. Câu lệnh Terminal thực thi kiểm thử
+
+Mở Terminal tại thư mục Root (nơi chứa file đuôi `.sln`) để chạy các lệnh chuyên biệt sau:
 
 ```bash
-# Chạy tất cả test khách hàng
+# 1. Chạy TẤT CẢ các kịch bản của toàn bộ Cụm Khách Hàng (Tầm 14 Test Cases)
 dotnet test --filter "TestCategory=KhachHang" --logger "console;verbosity=detailed"
 
-# Chạy riêng từng nhóm
+# 2. CHỈ chạy nhánh xử lý Đặt Vé, Chọn Ghế và Thanh toán (rất quan trọng)
+dotnet test --filter "TestCategory=DatVe|TestCategory=FlowDatVe" --logger "console;verbosity=detailed"
+
+# 3. CHỈ chạy nhánh các luồng còn lại (Đăng ký, Chuyển hướng, Tìm kiếm, Quản lý tài khoản)
 dotnet test --filter "TestCategory=DangKy"
 dotnet test --filter "TestCategory=ChuyenHuong"
 dotnet test --filter "TestCategory=TimKiem"
-dotnet test --filter "TestCategory=DatVe"
 dotnet test --filter "TestCategory=QuanLy"
-dotnet test --filter "TestCategory=FlowDatVe"
-dotnet test --filter "TestCategory=E2E"
 
-# Chạy 1 test case cụ thể
-dotnet test --filter "FullyQualifiedName~Test_II1_DK01"
+# 4. CHỈ chạy đích danh luồng siêu dài E2E (Mô phỏng y hệt thật - Xuyên suốt vòng đời Booking)
+dotnet test --filter "TestCategory=FlowDatVe" --logger "console;verbosity=detailed"
 ```
 
-## Test Cases được implement
+---
 
-| TC ID | Mô tả | Test File |
-|---|---|---|
-| II.1_DK_01 | Đăng ký thành công | DangKyTests.cs |
-| II.1_DK_02 | Đăng ký trùng email | DangKyTests.cs |
-| II.2_CH_01 | Chuyển hướng sau đăng nhập | ChuyenHuongTests.cs |
-| II.3_TK_01 | Tìm kiếm hợp lệ | TimKiemTests.cs |
-| II.3_TK_02 | Tìm kiếm ngày quá khứ | TimKiemTests.cs |
-| II.3_TK_03 | Không có chuyến xe | TimKiemTests.cs |
-| II.4_CG_01 | Chọn ghế + tính tiền | DatVeTests.cs |
-| II.4_CG_02 | Ghế đã bán | DatVeTests.cs |
-| II.4_TT_01 | Auto-fill thông tin | DatVeTests.cs |
-| II.4_TT_02 | Thanh toán Momo | DatVeTests.cs |
-| II.5_LS_01 | Lịch sử đặt vé | QuanLyTaiKhoanTests.cs |
-| II.5_CN_01 | Xem thông tin cá nhân | QuanLyTaiKhoanTests.cs |
-| II.5_ECN_01 | Chỉnh sửa thông tin | QuanLyTaiKhoanTests.cs |
-| **II.6_FLOW_01** | **Flow E2E: Đăng nhập → Chọn chuyến → Chọn ghế → Thanh toán → Đăng xuất** | **FlowDatVeTests.cs** |
-| II.6_FLOW_02 | Flow E2E từ spreadsheet (nếu có) | FlowDatVeTests.cs |
+## 4. Ghi chú cốt lõi (Core Implementations)
 
-## Test Cases SKIP (không khả thi tự động)
-
-| TC ID | Lý do skip |
-|---|---|
-| II.4_CG_03 | Concurrency test — cần 2 browser đồng thời, quá phức tạp |
-| II.4_TO_01 | Timeout 15 phút — không thể đợi thật |
-
-## Flow E2E — Chi tiết 8 bước
-
-| Step | Hành động | Expected Result |
-|---|---|---|
-| 1 | Truy cập trang chủ | Hiển thị danh sách chuyến xe |
-| 2 | Đăng nhập | Thành công, hiển thị tên user |
-| 3 | Chọn chuyến xe → vào sơ đồ ghế | Hiển thị sơ đồ ghế |
-| 4 | Chọn ghế trống | Ghế đổi màu, tổng tiền cập nhật |
-| 5 | Chọn thanh toán MoMo | Chọn xong phương thức |
-| 6 | Bấm Tiếp tục | Chuyển sang trang MoMo (giả lập) |
-| 7 | Thanh toán thành công | Booking Success |
-| 8 | Đăng xuất | Quay về trang Login |
-
-## Ghi chú quan trọng
-
-- **Test data thay thế**: Nếu test data từ spreadsheet không khả dụng (email đã tồn tại, ngày quá khứ), hệ thống tự thay data mới và ghi lại lên spreadsheet cột H (Test Data).
-- **Screenshots**: Tự động upload lên Google Drive và hiển thị qua `=IMAGE()` trong cột Notes.
-- **Merge cells**: Cột Status (K) và Notes (L) được auto-merge cho mỗi test case.
-- **Customer account**: `duc19092005d@gmail.com` / `anhduc9a5`
-- **Flow E2E timeout**: 5 phút (300 giây) — do flow cần chạy qua nhiều trang và chờ load.
+- **Cơ chế Vượt chặn Ghế bằng JS (Fallback JS Click)**: Trong bộ `KhachHangSeleniumService.cs`, nếu thuật toán Selenium gặp lỗi che khuất Element (`Element Intercepted Exception`) lúc bấm nút thanh toán hoặc tương tác ghế ngồi, hệ thống sẽ tự động invoke ngược lệnh Browser `IJavaScriptExecutor` để can thiệp ép nhận diện hành động một cách an toàn.
+- **Tự động hóa ScreenCapture**: Khi qua từng chặng Test thành công hoặc gặp lỗi, Auto-Screenshot được kích hoạt, lưu vào `/Screenshots/KhachHang` và được Upload thẳng lên folder *Google Drive*, link ảnh `=`IMAGE()` sau chót sẽ rớt xuống ngược lại vào Cột Notes trên Spreadsheet.
+- **Tự động Tracking Data Ảo**: Khắc phục "Tài khoản tồn tại" trong DB bằng cách Automation sẽ sinh ngẫu nhiên Random string `yyyyMMdd` gắn vào Prefix `email`. Data ảo được khai sinh này ngay lập tức sẽ được log đè ngược lại cột `Test Data` để tester biết Account nào vừa được sử dụng cho Unit Testing.
