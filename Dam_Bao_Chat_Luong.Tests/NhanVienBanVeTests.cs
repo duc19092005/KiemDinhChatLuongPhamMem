@@ -82,7 +82,7 @@ namespace Dam_Bao_Chat_Luong.Tests
             Assert.IsTrue(ok, msg);
         }
 
-        [TestMethod]
+        [TestMethod]    
         public async Task TC02_LoginFail()
         {
             var d = _selenium.GetDriver();
@@ -524,54 +524,213 @@ namespace Dam_Bao_Chat_Luong.Tests
         [TestMethod]
         public async Task TC18_TrungGhe_NV_NV()
         {
-            var d1 = _selenium.GetDriver();
+            var d1 = _selenium.GetDriver(); 
             var tc = (await _service.GetTestCasesAsync()).FirstOrDefault(x => x.TestCaseId == "IV.3_BV_14");
             string msg = ""; bool pass = false;
-            using (var d2 = new ChromeDriver())
+
+            string emailNv1 = tc.Steps[0].TestDataRaw;
+            string passNv1 = tc.Steps[1].TestDataRaw;
+            string emailNv2 = tc.Steps[2].TestDataRaw;
+            string passNv2 = tc.Steps[3].TestDataRaw;
+            string ngayDi = tc.Steps[4].TestDataRaw;
+            string soGhe = tc.Steps[5].TestDataRaw.Trim().PadLeft(2, '0');
+            string tenKhach1 = tc.Steps[6].TestDataRaw;
+            string sdtKhach1 = tc.Steps[7].TestDataRaw;
+            string tenKhach2 = tc.Steps[8].TestDataRaw;
+            string sdtKhach2 = tc.Steps[9].TestDataRaw;
+
+            using (var d2 = new ChromeDriver()) 
             {
                 try
                 {
-                    await Login(d1, tc.Steps[0].TestDataRaw, "123456789@duc"); // NV1
-                    await Login(d2, tc.Steps[2].TestDataRaw, "123456789@duc"); // NV2
-
+                    await Login(d1, emailNv1, passNv1);
+                    await Login(d2, emailNv2, passNv2);
+                    Thread.Sleep(2000);
                     var w1 = new WebDriverWait(d1, TimeSpan.FromSeconds(15));
                     var js1 = (IJavaScriptExecutor)d1;
+                    Thread.Sleep(2000);
+                    js1.ExecuteScript($"document.getElementById('ngayDi').value='{ngayDi}';");
+                    d1.FindElement(By.Id("btnFilter")).Click();
+                    Thread.Sleep(2000);
                     w1.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("a.trip-box"))).Click();
                     w1.Until(ExpectedConditions.ElementIsVisible(By.Id("seat-map-container")));
+                    Thread.Sleep(2000);
                     d2.Navigate().GoToUrl(d1.Url);
-
                     var w2 = new WebDriverWait(d2, TimeSpan.FromSeconds(15));
                     var js2 = (IJavaScriptExecutor)d2;
                     w2.Until(ExpectedConditions.ElementIsVisible(By.Id("seat-map-container")));
-
-                    string sid = "seat-" + tc.Steps[4].TestDataRaw.Trim().PadLeft(2, '0'); // Ghế từ Excel
-                    var s1 = d1.FindElement(By.Id(sid)); js1.ExecuteScript("arguments[0].click();", s1);
-                    var s2 = d2.FindElement(By.Id(sid)); js2.ExecuteScript("arguments[0].click();", s2);
-
-                    // NV2 mua trước
-                    d2.FindElement(By.Id("HoTen")).SendKeys(tc.Steps[8].TestDataRaw);
-                    d2.FindElement(By.Id("SoDienThoai")).SendKeys(tc.Steps[9].TestDataRaw);
+                    Thread.Sleep(2000);
+                    string sid = "seat-" + soGhe;
+                    var s1 = w1.Until(ExpectedConditions.ElementExists(By.Id(sid)));
+                    js1.ExecuteScript("arguments[0].click();", s1);
+                    Thread.Sleep(2000);
+                    var s2 = w2.Until(ExpectedConditions.ElementExists(By.Id(sid)));
+                    js2.ExecuteScript("arguments[0].click();", s2);
+                    Thread.Sleep(2000);
+                    d2.FindElement(By.Id("HoTen")).SendKeys(tenKhach2);
+                    d2.FindElement(By.Id("SoDienThoai")).SendKeys(sdtKhach2);
                     js2.ExecuteScript("arguments[0].click();", d2.FindElement(By.Id("btnSubmitBanVe")));
+                    Thread.Sleep(2000);
                     w2.Until(ExpectedConditions.AlertIsPresent()).Accept();
                     w2.Until(ExpectedConditions.AlertIsPresent()).Accept();
-
-                    // NV1 mua sau
-                    d1.FindElement(By.Id("HoTen")).SendKeys(tc.Steps[5].TestDataRaw);
-                    d1.FindElement(By.Id("SoDienThoai")).SendKeys(tc.Steps[6].TestDataRaw);
+                    Thread.Sleep(2000);
+                    d1.FindElement(By.Id("HoTen")).SendKeys(tenKhach1);
+                    d1.FindElement(By.Id("SoDienThoai")).SendKeys(sdtKhach1);
                     js1.ExecuteScript("arguments[0].click();", d1.FindElement(By.Id("btnSubmitBanVe")));
+                    Thread.Sleep(2000);
                     w1.Until(ExpectedConditions.AlertIsPresent()).Accept();
-
-                    var alertResult = w1.Until(ExpectedConditions.AlertIsPresent());
-                    pass = alertResult.Text.Contains("đã") || alertResult.Text.Contains("lỗi");
-                    alertResult.Accept();
-                    msg = pass ? tc.ExpectedResult : "Lỗi: Không chặn được giao dịch trùng ghế.";
+                    Thread.Sleep(2000);
+                    var errorAlert = w1.Until(ExpectedConditions.AlertIsPresent());
+                    string alertText = errorAlert.Text.ToLower();
+                    Thread.Sleep(2000);
+                    // Đọc text để Assert
+                    pass = alertText.Contains("đã có người") || alertText.Contains("đã bán") || alertText.Contains("lỗi") || alertText.Contains("thất bại");
+                    msg = pass ? $"{errorAlert.Text}" : $"Lỗi: Thông báo sai '{errorAlert.Text}'";
+                    Thread.Sleep(2000);
+                    errorAlert.Accept();
+                    Thread.Sleep(2000);
+                    await GhiKetQuaTuNhien(d1, "TC18", tc?.SpreadsheetExpectedResultRow ?? 0, msg);
                 }
                 catch (Exception ex) { msg = DichLoi(ex); }
             }
-            await GhiKetQuaTuNhien(d1, "TC18", tc?.SpreadsheetExpectedResultRow ?? 0, msg);
             Assert.IsTrue(pass, msg);
         }
 
+        [TestMethod]
+        public async Task TC20_TrungGhe_Online()
+        {
+            var dOnline = _selenium.GetDriver(); 
+            var tc = (await _service.GetTestCasesAsync()).FirstOrDefault(x => x.TestCaseId == "IV.3_BV_16");
+            string msg = ""; bool pass = false;
+            string currentStep = "Bắt đầu test";
+
+            // Đọc data từ Excel
+            string emailKhach = tc.Steps[0].TestDataRaw;
+            string passKhach = tc.Steps[1].TestDataRaw;
+            string ngayDi = tc.Steps[2].TestDataRaw;
+            string soGheKhach = tc.Steps[3].TestDataRaw.Trim();
+            string soGheNv = soGheKhach.PadLeft(2, '0');
+            string emailNv = tc.Steps[4].TestDataRaw;
+            string passNv = tc.Steps[5].TestDataRaw;
+            string tenKhachVangLai = tc.Steps[6].TestDataRaw;
+            string sdtKhachVangLai = tc.Steps[7].TestDataRaw;
+
+            using (var dNv = new ChromeDriver()) 
+            {
+                try
+                {
+                    var wOnl = new WebDriverWait(dOnline, TimeSpan.FromSeconds(30));
+                    var jsOnl = (IJavaScriptExecutor)dOnline;
+                    dOnline.Manage().Window.Maximize();
+
+                    // BƯỚC 1: KHÁCH HÀNG ĐĂNG NHẬP VÀ CHỌN GHẾ
+                    currentStep = "[KH] Đăng nhập";
+                    dOnline.Navigate().GoToUrl("http://duck123.runasp.net/Auth/Login");
+                    var inputEmail = wOnl.Until(ExpectedConditions.ElementIsVisible(By.Id("EmailOrPhone")));
+                    inputEmail.Clear(); inputEmail.SendKeys(emailKhach);
+                    dOnline.FindElement(By.Id("password-input")).SendKeys(passKhach);
+                    dOnline.FindElement(By.CssSelector(".btn-login")).Click();
+                    Thread.Sleep(2000);
+
+                    currentStep = "[KH] Nhảy thẳng vào trang Lịch Trình/Chuyến Xe";
+                    dOnline.Navigate().GoToUrl("http://duck123.runasp.net/Home_User/ChuyenXe_User");
+                    Thread.Sleep(2000);
+
+                    currentStep = "[KH] Nhập ngày và Tìm kiếm chuyến xe";
+                    var inputNgayDi = wOnl.Until(ExpectedConditions.ElementExists(By.Id("ngayDi")));
+                    jsOnl.ExecuteScript($"arguments[0].value='{ngayDi}';", inputNgayDi);
+                    jsOnl.ExecuteScript("arguments[0].blur();", inputNgayDi);
+                    Thread.Sleep(500);
+
+                    var btnTimKiem = wOnl.Until(ExpectedConditions.ElementExists(By.CssSelector(".btn-search")));
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", btnTimKiem);
+                    Thread.Sleep(2000);
+
+                    currentStep = "[KH] Trích xuất ID Chuyến và Bấm Chọn";
+                    var btnChonChuyen = wOnl.Until(ExpectedConditions.ElementExists(By.XPath("(//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'chọn chuyến')])[1]")));
+
+                    string hrefKhach = btnChonChuyen.GetAttribute("href");
+                    string chuyenId = hrefKhach.Substring(hrefKhach.IndexOf("chuyenId=") + 9);
+                    if (chuyenId.Contains("&")) chuyenId = chuyenId.Split('&')[0];
+
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", btnChonChuyen);
+
+                    currentStep = "[KH] Chọn ghế trên sơ đồ";
+                    wOnl.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".seat")));
+                    var xpathGheKh = $"//*[contains(@class, 'seat') and (@data-seat-id='{soGheKhach}' or @id='seat-{soGheKhach}' or @id='seat-{soGheNv}' or normalize-space(text())='{soGheKhach}')]";
+                    var sOnl = wOnl.Until(ExpectedConditions.ElementExists(By.XPath(xpathGheKh)));
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", sOnl);
+                    Thread.Sleep(1000);
+
+                    // BƯỚC 2: NHÂN VIÊN ĐĂNG NHẬP VÀ VÀO CÙNG CHUYẾN ĐÓ
+                    currentStep = "[NV] Đăng nhập";
+                    dNv.Manage().Window.Maximize();
+                    await Login(dNv, emailNv, passNv);
+                    var wNv = new WebDriverWait(dNv, TimeSpan.FromSeconds(30));
+                    var jsNv = (IJavaScriptExecutor)dNv;
+
+                    currentStep = "[NV] Nhảy thẳng vào chung chuyến xe với Khách Hàng";
+                    dNv.Navigate().GoToUrl($"http://duck123.runasp.net/NhaXe/BanVe/BanVe/{chuyenId}");
+                    wNv.Until(ExpectedConditions.ElementIsVisible(By.Id("seat-map-container")));
+
+                    currentStep = "[NV] Chọn ghế tranh chấp";
+                    var sNv = wNv.Until(ExpectedConditions.ElementExists(By.Id($"seat-{soGheNv}")));
+                    jsNv.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", sNv);
+
+                    dNv.FindElement(By.Id("HoTen")).SendKeys(tenKhachVangLai);
+                    dNv.FindElement(By.Id("SoDienThoai")).SendKeys(sdtKhachVangLai);
+                    Thread.Sleep(1000);
+
+                    // BƯỚC 3: KHÁCH HÀNG THANH TOÁN MOMO TRƯỚC
+                    currentStep = "[KH] Chọn phương thức MoMo và Tiếp tục";
+                    var selectGateway = wOnl.Until(ExpectedConditions.ElementExists(By.Id("gateway")));
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", selectGateway);
+                    jsOnl.ExecuteScript("arguments[0].click();", selectGateway);
+                    Thread.Sleep(500);
+
+                    var selectObj = new SelectElement(selectGateway);
+                    selectObj.SelectByValue("MOMO");
+                    Thread.Sleep(1000);
+
+                    currentStep = "[KH] Bấm nút Tiếp tục để sang cổng thanh toán";
+                    var btnContinuePay = dOnline.FindElement(By.Id("btn-continue"));
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", btnContinuePay);
+                    Thread.Sleep(2000);
+
+                    currentStep = "[KH] Xác nhận thanh toán bên trang MoMo";
+                    var btnXacNhanMoMo = wOnl.Until(ExpectedConditions.ElementExists(By.XPath("//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'thanh toán')]")));
+                    jsOnl.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", btnXacNhanMoMo);
+
+                    currentStep = "[KH] Chờ trang thông báo Thanh toán thành công";
+                    wOnl.Until(x => x.PageSource.ToLower().Contains("thành công") || x.Url.ToLower().Contains("success"));
+                    Thread.Sleep(2000);
+
+                    // BƯỚC 4: NHÂN VIÊN BẤM XUẤT VÉ SAU VÀ BỊ CHẶN
+                    currentStep = "[NV] Bấm Xác nhận & Xuất vé";
+                    var btnXacNhanNV = dNv.FindElement(By.Id("btnSubmitBanVe"));
+                    jsNv.ExecuteScript("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", btnXacNhanNV);
+                    Thread.Sleep(2000);
+                    try { wNv.Until(ExpectedConditions.AlertIsPresent()).Accept(); } catch { }
+                    Thread.Sleep(2000);
+                    currentStep = "[NV] Bắt Alert thông báo lỗi";
+                    var errorAlert = wNv.Until(ExpectedConditions.AlertIsPresent());
+                    string alertText = errorAlert.Text.ToLower();
+                    Thread.Sleep(2000);
+                    pass = alertText.Contains("đã có người") || alertText.Contains("đã bán") || alertText.Contains("online") || alertText.Contains("lỗi") || alertText.Contains("thất bại");
+                    msg = pass ? $"Hệ thống báo đúng lỗi: '{errorAlert.Text}'" : $"Lỗi: Thông báo sai '{errorAlert.Text}'";
+                    Thread.Sleep(2000);
+                    errorAlert.Accept();
+                    Thread.Sleep(2000); 
+                }
+                catch (Exception ex)
+                {
+                    msg = $"Lỗi kẹt giao diện tại bước: {currentStep} | Chi tiết: {ex.Message}";
+                }
+
+                await GhiKetQuaTuNhien(dNv, "TC20", tc?.SpreadsheetExpectedResultRow ?? 0, msg);
+            }
+            Assert.IsTrue(pass, msg);
+        }
         [TestMethod]
         public async Task TC19_ChuyenDaChay()
         {
@@ -622,37 +781,6 @@ namespace Dam_Bao_Chat_Luong.Tests
             Assert.IsTrue(ok, msg);
         }
 
-        [TestMethod]
-        public async Task TC20_TrungGhe_Online()
-        {
-            var d = _selenium.GetDriver();
-            var tc = (await _service.GetTestCasesAsync()).FirstOrDefault(x => x.TestCaseId == "IV.3_BV_16");
-            await Login(d, tc.Steps[3].TestDataRaw, "123456789@duc"); // Email NV
-            bool ok = false; string msg = "";
-            try
-            {
-                var w = new WebDriverWait(d, TimeSpan.FromSeconds(15));
-                var js = (IJavaScriptExecutor)d;
-                w.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("a.trip-box"))).Click();
-                w.Until(ExpectedConditions.ElementIsVisible(By.Id("seat-map-container")));
-
-                string sNo = tc.Steps[8].TestDataRaw.Trim().PadLeft(2, '0'); // Ghế từ Excel
-                var s = w.Until(ExpectedConditions.ElementExists(By.Id($"seat-{sNo}")));
-                js.ExecuteScript("arguments[0].click();", s);
-
-                d.FindElement(By.Id("HoTen")).SendKeys(tc.Steps[9].TestDataRaw);
-                d.FindElement(By.Id("SoDienThoai")).SendKeys(tc.Steps[10].TestDataRaw);
-                js.ExecuteScript("arguments[0].click();", d.FindElement(By.Id("btnSubmitBanVe")));
-
-                w.Until(ExpectedConditions.AlertIsPresent()).Accept();
-                var alert = w.Until(ExpectedConditions.AlertIsPresent());
-                ok = alert.Text.Contains("thất bại") || alert.Text.Contains("online") || alert.Text.Contains("đã bán");
-                alert.Accept();
-                msg = ok ? tc.ExpectedResult : "Không ưu tiên chặn thanh toán tại quầy khi khách online đang giữ chỗ.";
-            }
-            catch (Exception ex) { msg = DichLoi(ex); }
-            await GhiKetQuaTuNhien(d, "TC20", tc?.SpreadsheetExpectedResultRow ?? 0, msg);
-            Assert.IsTrue(ok, msg);
-        }
+      
     }
 }
