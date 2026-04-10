@@ -36,7 +36,7 @@ public class KhachHangExcelReaderService
         var testCases = new List<KhachHangTestCaseModel>();
         KhachHangTestCaseModel? currentTestCase = null;
         var skipValues = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "ĐĂNG KÝ", "TÌM KIẾM", "ĐẶT VÉ", "No." };
+            { "ĐĂNG KÝ", "TÌM KIẾM", "ĐẶT VÉ", "No.", "ĐĂNG NHẬP", "NAVIGATION", "QUẢN LÝ TÀI KHOẢN", "FLOW ĐẶT VÉ E2E" };
 
         for (int i = 0; i < rows.Count; i++)
         {

@@ -129,14 +129,25 @@ public class FlowDatVeTests
 
         if (tc == null)
         {
-            Assert.Inconclusive("Test case II.6_FLOW_01 không tồn tại trên spreadsheet (có thể sai ID hoặc chưa đồng bộ) — bỏ qua.");
-            return;
+            // Fallback: dùng local test case nếu chưa có trên spreadsheet
+            Console.WriteLine("  ⚠️ II.6_FLOW_01 chưa có trên spreadsheet — dùng local test case");
+            tc = CreateLocalFlowTestCase();
         }
 
-        Console.WriteLine($"  📋 Chạy Flow từ spreadsheet: {tc.TestCaseId} — {tc.TestObjective}");
+        Console.WriteLine($"  📋 Chạy Flow: {tc.TestCaseId} — {tc.TestObjective}");
 
         var result = _selenium.Test_Flow_DatVe_E2E(tc);
-        await _writer.WriteTestResult(result);
+
+        // Ghi kết quả lên spreadsheet nếu có row mapping
+        if (tc.SpreadsheetStartRow > 0)
+        {
+            try { await _writer.WriteTestResult(result); }
+            catch (Exception ex) { Console.WriteLine($"  ⚠️ Không ghi được lên spreadsheet: {ex.Message}"); }
+        }
+        else
+        {
+            Console.WriteLine("  ℹ️ Bỏ qua ghi Google Sheet vì Local Test (SpreadsheetStartRow = 0)");
+        }
 
         foreach (var sr in result.StepResults)
             Console.WriteLine($"  Step {sr.StepNumber}: {sr.ActualResult}");
@@ -156,7 +167,7 @@ public class FlowDatVeTests
             No = "II.6",
             TestRequirementId = "II.6_FlowDatVe",
             TestCaseId = "II.6_FLOW_01",
-            TestObjective = "Flow đặt vé End-to-End: Đăng nhập → Chọn chuyến → Chọn ghế → Thanh toán MoMo → Đăng xuất",
+            TestObjective = "Flow đặt vé End-to-End: Đăng nhập → Chọn chuyến → Chọn ghế → Thanh toán MoMo → Kiểm tra lịch sử → Đăng xuất",
             PreConditions = "Có tài khoản khách hàng hợp lệ, có chuyến xe khả dụng trên trang chủ",
             SpreadsheetStartRow = 0,
             SpreadsheetEndRow = 0,
@@ -215,6 +226,13 @@ public class FlowDatVeTests
                 new()
                 {
                     StepNumber = 8,
+                    Action = "Vào trang Lịch sử mua vé và kiểm tra vé vừa đặt",
+                    ExpectedResult = "Vé vừa đặt tồn tại trong Lịch sử mua vé với trạng thái Đã thanh toán",
+                    SpreadsheetRow = 0
+                },
+                new()
+                {
+                    StepNumber = 9,
                     Action = "Đăng xuất khỏi hệ thống",
                     ExpectedResult = "Đăng xuất thành công, quay về trang Đăng nhập",
                     SpreadsheetRow = 0

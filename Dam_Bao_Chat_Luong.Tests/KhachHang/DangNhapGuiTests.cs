@@ -5,10 +5,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Dam_Bao_Chat_Luong.Tests.KhachHang;
 
 /// <summary>
-/// Test đăng ký tài khoản: II.1_DK_01, II.1_DK_02
+/// Test GUI trang đăng nhập: II.1_LG_01 → II.1_LG_04
 /// </summary>
 [TestClass]
-public class DangKyTests
+public class DangNhapGuiTests
 {
     private KhachHangSeleniumService _selenium = null!;
     private KhachHangExcelReaderService _reader = null!;
@@ -28,14 +28,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
-    [Description("II.1_DK_01: Đăng ký tài khoản khách hàng thành công")]
-    public async Task Test_II1_DK01_DangKy_ThanhCong()
+    [TestCategory("GUI")]
+    [TestCategory("DangNhap")]
+    [Description("II.1_LG_01: Kiểm tra trang đăng nhập hiển thị đúng")]
+    public async Task Test_II1_LG01_LoginPage_HienThi()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_01");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_01");
+        var tc = await _reader.GetTestCaseById("II.1_LG_01");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_LG_01");
 
-        var result = _selenium.Test_DK01(tc);
+        var result = _selenium.Test_LG01(tc);
         await _writer.WriteTestResult(result);
 
         Console.WriteLine($"  Status: {result.Status}");
@@ -48,14 +49,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
-    [Description("II.1_DK_02: Đăng ký thất bại do trùng Email/SĐT")]
-    public async Task Test_II1_DK02_DangKy_TrungEmail()
+    [TestCategory("GUI")]
+    [TestCategory("DangNhap")]
+    [Description("II.1_LG_02: Đăng nhập để trống Email")]
+    public async Task Test_II1_LG02_LoginPage_TrongEmail()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_02");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_02");
+        var tc = await _reader.GetTestCaseById("II.1_LG_02");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_LG_02");
 
-        var result = _selenium.Test_DK02(tc);
+        var result = _selenium.Test_LG02(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,
@@ -64,15 +66,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
     [TestCategory("GUI")]
-    [Description("II.1_DK_03: Đăng ký thất bại do mật khẩu không khớp")]
-    public async Task Test_II1_DK03_DangKy_MatKhauKhongKhop()
+    [TestCategory("DangNhap")]
+    [Description("II.1_LG_03: Đăng nhập để trống Password")]
+    public async Task Test_II1_LG03_LoginPage_TrongPassword()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_03");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_03");
+        var tc = await _reader.GetTestCaseById("II.1_LG_03");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_LG_03");
 
-        var result = _selenium.Test_DK03(tc);
+        var result = _selenium.Test_LG03(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,
@@ -81,15 +83,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
     [TestCategory("GUI")]
-    [Description("II.1_DK_04: Đăng ký thất bại khi để trống tất cả fields")]
-    public async Task Test_II1_DK04_DangKy_TrongTatCa()
+    [TestCategory("DangNhap")]
+    [Description("II.1_LG_04: Đăng nhập sai mật khẩu")]
+    public async Task Test_II1_LG04_LoginPage_SaiMatKhau()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_04");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_04");
+        var tc = await _reader.GetTestCaseById("II.1_LG_04");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_LG_04");
 
-        var result = _selenium.Test_DK04(tc);
+        var result = _selenium.Test_LG04(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,

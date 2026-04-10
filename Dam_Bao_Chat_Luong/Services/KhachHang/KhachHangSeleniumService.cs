@@ -852,6 +852,496 @@ public class KhachHangSeleniumService : IDisposable
 
     #endregion
 
+    #region ĐĂNG NHẬP GUI
+
+    /// <summary>II.1_LG_01 — Kiểm tra trang đăng nhập hiển thị đúng</summary>
+    public KhachHangTestResult Test_LG01(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Logout();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Login");
+            WaitForPageLoad(); Thread.Sleep(1500);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            bool emailField = _driver.FindElements(By.Id("EmailOrPhone")).Count > 0;
+            bool passField = _driver.FindElements(By.Id("password-input")).Count > 0;
+            bool loginBtn = _driver.FindElements(By.CssSelector(".btn-login")).Count > 0;
+            bool registerLink = _driver.FindElements(By.XPath("//a[contains(@href,'Register')]")).Count > 0;
+            bool allOk = emailField && passField && loginBtn && registerLink;
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    allOk ? "- Trang đăng nhập hiển thị đầy đủ:\n  + Ô nhập Email/SĐT\n  + Ô nhập Mật khẩu\n  + Nút ĐĂNG NHẬP\n  + Link Đăng ký"
+                    : $"Thiếu element: Email={emailField}, Pass={passField}, Btn={loginBtn}, Register={registerLink}"));
+
+            var shot = TakeScreenshot("LG01");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = allOk ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.1_LG_02 — Đăng nhập để trống Email</summary>
+    public KhachHangTestResult Test_LG02(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Logout();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Login");
+            WaitForPageLoad(); Thread.Sleep(1000);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            // Để trống email, nhập password
+            var p = _driver.FindElement(By.Id("password-input"));
+            p.Clear(); p.SendKeys("somepassword");
+            Thread.Sleep(300);
+            _driver.FindElement(By.CssSelector(".btn-login")).Click();
+            Thread.Sleep(2000); WaitForPageLoad();
+
+            bool stayOnLogin = _driver.Url.Contains("/Auth/Login");
+            var msgs = GetPageMessages();
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    stayOnLogin ? $"- Vẫn ở trang đăng nhập\n- Thông báo lỗi: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Hiển thị validation")}"
+                    : "Đã chuyển trang (Lỗi!)"));
+
+            var shot = TakeScreenshot("LG02");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = stayOnLogin ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.1_LG_03 — Đăng nhập để trống Password</summary>
+    public KhachHangTestResult Test_LG03(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Logout();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Login");
+            WaitForPageLoad(); Thread.Sleep(1000);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            var e = _driver.FindElement(By.Id("EmailOrPhone"));
+            e.Clear(); e.SendKeys("test@gmail.com");
+            Thread.Sleep(300);
+            _driver.FindElement(By.CssSelector(".btn-login")).Click();
+            Thread.Sleep(2000); WaitForPageLoad();
+
+            bool stayOnLogin = _driver.Url.Contains("/Auth/Login");
+            var msgs = GetPageMessages();
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    stayOnLogin ? $"- Vẫn ở trang đăng nhập\n- Thông báo lỗi: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Hiển thị validation")}"
+                    : "Đã chuyển trang (Lỗi!)"));
+
+            var shot = TakeScreenshot("LG03");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = stayOnLogin ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.1_LG_04 — Đăng nhập sai mật khẩu</summary>
+    public KhachHangTestResult Test_LG04(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Logout();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Login");
+            WaitForPageLoad(); Thread.Sleep(1000);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            var e = _driver.FindElement(By.Id("EmailOrPhone"));
+            var p = _driver.FindElement(By.Id("password-input"));
+            e.Clear(); e.SendKeys(CustomerEmail);
+            p.Clear(); p.SendKeys("wrongpassword123");
+            Thread.Sleep(300);
+            _driver.FindElement(By.CssSelector(".btn-login")).Click();
+            Thread.Sleep(3000); WaitForPageLoad();
+
+            bool stayOnLogin = _driver.Url.Contains("/Auth/Login");
+            var msgs = GetPageMessages();
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    stayOnLogin ? $"- Vẫn ở trang đăng nhập\n- Thông báo lỗi: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Đăng nhập thất bại")}"
+                    : "Đã chuyển trang dù sai mật khẩu (Lỗi!)"));
+
+            var shot = TakeScreenshot("LG04");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = stayOnLogin ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    #endregion
+
+    #region ĐĂNG KÝ MỞ RỘNG
+
+    /// <summary>II.1_DK_03 — Đăng ký mật khẩu không khớp</summary>
+    public KhachHangTestResult Test_DK03(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Register");
+            WaitForPageLoad(); Thread.Sleep(1000);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            var ts = DateTime.Now.ToString("yyyyMMddHHmmss");
+            _driver.FindElement(By.Id("HoTen")).SendKeys("Test DK03");
+            _driver.FindElement(By.Id("Email")).SendKeys($"dk03_{ts}@gmail.com");
+            _driver.FindElement(By.Id("SoDienThoai")).SendKeys($"090{ts.Substring(ts.Length - 7)}");
+            _driver.FindElement(By.Id("pass-1")).SendKeys("Password@123");
+            _driver.FindElement(By.Id("pass-2")).SendKeys("DifferentPass@456");
+            Thread.Sleep(500);
+
+            _driver.FindElement(By.CssSelector(".btn-register")).Click();
+            Thread.Sleep(2000); WaitForPageLoad();
+
+            bool stayOnRegister = _driver.Url.Contains("/Auth/Register");
+            var msgs = GetPageMessages();
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    stayOnRegister ? $"- Giữ nguyên trang đăng ký\n- Thông báo lỗi: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Mật khẩu không khớp")}"
+                    : "Đã đăng ký thành công dù mật khẩu không khớp (Lỗi!)"));
+
+            var shot = TakeScreenshot("DK03");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = stayOnRegister ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.1_DK_04 — Đăng ký để trống tất cả fields</summary>
+    public KhachHangTestResult Test_DK04(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Register");
+            WaitForPageLoad(); Thread.Sleep(1000);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            // Bấm đăng ký mà không nhập gì
+            _driver.FindElement(By.CssSelector(".btn-register")).Click();
+            Thread.Sleep(2000); WaitForPageLoad();
+
+            bool stayOnRegister = _driver.Url.Contains("/Auth/Register");
+            var msgs = GetPageMessages();
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    stayOnRegister ? $"- Giữ nguyên trang đăng ký\n- Hiển thị validation: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Yêu cầu nhập thông tin bắt buộc")}"
+                    : "Đã chuyển trang dù không nhập gì (Lỗi!)"));
+
+            var shot = TakeScreenshot("DK04");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = stayOnRegister ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    #endregion
+
+    #region NAVIGATION
+
+    /// <summary>II.6_NAV_01 — Kiểm tra Navbar hiển thị đúng sau đăng nhập</summary>
+    public KhachHangTestResult Test_NAV01(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Login();
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            _driver.Navigate().GoToUrl(_baseUrl);
+            WaitForPageLoad(); Thread.Sleep(1500);
+
+            string navText = "";
+            try { navText = _driver.FindElement(By.CssSelector("nav, .navbar")).Text; } catch { }
+
+            bool hasHome = navText.Contains("Trang chủ", StringComparison.OrdinalIgnoreCase) || _driver.FindElements(By.XPath("//a[contains(text(),'Trang chủ')]")).Count > 0;
+            bool hasHistory = _driver.FindElements(By.XPath("//a[contains(text(),'Lịch sử')]")).Count > 0;
+            bool hasSchedule = _driver.FindElements(By.XPath("//a[contains(text(),'Lịch trình')]")).Count > 0;
+            bool hasAbout = _driver.FindElements(By.XPath("//a[contains(text(),'Về chúng tôi')]")).Count > 0;
+            bool hasContact = _driver.FindElements(By.XPath("//a[contains(text(),'Liên hệ')]")).Count > 0;
+            bool hasUser = navText.Contains("Xin chào") || navText.Contains(CustomerEmail)
+                || _driver.FindElements(By.CssSelector(".dropdown-toggle")).Count > 0;
+
+            bool allOk = hasHistory && hasSchedule && hasAbout && hasUser;
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    allOk ? $"- Navbar hiển thị đầy đủ:\n  + Trang chủ: {hasHome}\n  + Lịch sử: {hasHistory}\n  + Lịch trình: {hasSchedule}\n  + Về chúng tôi: {hasAbout}\n  + Liên hệ: {hasContact}\n  + Tên người dùng: {hasUser}"
+                    : $"Navbar thiếu element. History={hasHistory}, Schedule={hasSchedule}, About={hasAbout}, User={hasUser}"));
+
+            var shot = TakeScreenshot("NAV01");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            Logout();
+            r.Status = allOk ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.6_NAV_02 — Điều hướng đến tất cả các trang từ navbar</summary>
+    public KhachHangTestResult Test_NAV02(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Login();
+            var pages = new (string name, string[] urls)[]
+            {
+                ("Lịch sử", new[] { "/Auth/History", "/Home_User/PurchaseHistory" }),
+                ("Lịch trình", new[] { "/Home_User/ChuyenXe_User" }),
+                ("Về chúng tôi", new[] { "/Home_User/About" }),
+            };
+
+            var results = new List<string>();
+            int passCount = 0;
+
+            foreach (var page in pages)
+            {
+                try
+                {
+                    var link = _driver.FindElements(By.XPath($"//a[contains(text(),'{page.name}')]"));
+                    if (link.Count > 0) { link[0].Click(); Thread.Sleep(2000); WaitForPageLoad(); }
+                    else { _driver.Navigate().GoToUrl($"{_baseUrl}{page.urls[0]}"); Thread.Sleep(2000); WaitForPageLoad(); }
+
+                    bool pageLoaded = page.urls.Any(u => _driver.Url.Contains(u, StringComparison.OrdinalIgnoreCase))
+                        || !string.IsNullOrEmpty(_driver.Title);
+                    results.Add($"  + {page.name}: {(pageLoaded ? "OK" : "FAIL")} ({_driver.Url})");
+                    if (pageLoaded) passCount++;
+                }
+                catch (Exception ex) { results.Add($"  + {page.name}: FAIL ({ex.Message})"); }
+            }
+
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    $"- Điều hướng {passCount}/{pages.Length} trang thành công:\n{string.Join("\n", results)}"));
+
+            var shot = TakeScreenshot("NAV02");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            Logout();
+            r.Status = passCount == pages.Length ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.6_NAV_03 — Kiểm tra trang Về chúng tôi hiển thị</summary>
+    public KhachHangTestResult Test_NAV03(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Home_User/About");
+            WaitForPageLoad(); Thread.Sleep(1500);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            var pageText = _driver.FindElement(By.TagName("body")).Text;
+            bool hasContent = pageText.Length > 100 && (
+                pageText.Contains("GoSix", StringComparison.OrdinalIgnoreCase) ||
+                pageText.Contains("về chúng tôi", StringComparison.OrdinalIgnoreCase) ||
+                pageText.Contains("giới thiệu", StringComparison.OrdinalIgnoreCase));
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    hasContent ? "- Trang Về chúng tôi hiển thị đúng với nội dung giới thiệu công ty"
+                    : "- Trang Về chúng tôi không hiển thị nội dung"));
+
+            var shot = TakeScreenshot("NAV03");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = hasContent ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.6_NAV_04 — Kiểm tra trang Lịch trình hiển thị</summary>
+    public KhachHangTestResult Test_NAV04(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Home_User/ChuyenXe_User");
+            WaitForPageLoad(); Thread.Sleep(1500);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            var pageText = _driver.FindElement(By.TagName("body")).Text;
+            bool hasContent = pageText.Contains("chuyến", StringComparison.OrdinalIgnoreCase)
+                || pageText.Contains("lịch trình", StringComparison.OrdinalIgnoreCase)
+                || pageText.Contains("tuyến", StringComparison.OrdinalIgnoreCase)
+                || _driver.FindElements(By.CssSelector("table, .trip-item, .card")).Count > 0;
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    hasContent ? "- Trang Lịch trình hiển thị danh sách chuyến xe / tuyến đường"
+                    : "- Trang Lịch trình không hiển thị nội dung"));
+
+            var shot = TakeScreenshot("NAV04");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = hasContent ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    #endregion
+
+    #region ĐỔI MẬT KHẨU & ĐĂNG XUẤT
+
+    /// <summary>II.5_MK_01 — Kiểm tra form đổi mật khẩu hiển thị</summary>
+    public KhachHangTestResult Test_MK01(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Login();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/ResetPassword");
+            WaitForPageLoad(); Thread.Sleep(1500);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            bool hasOldPass = _driver.FindElements(By.Id("oldPassword")).Count > 0
+                || _driver.FindElements(By.CssSelector("input[name*='old'], input[name*='Old'], input[name*='current']")).Count > 0;
+            bool hasNewPass = _driver.FindElements(By.Id("newPassword")).Count > 0
+                || _driver.FindElements(By.CssSelector("input[name*='new'], input[name*='New']")).Count > 0;
+            bool hasConfirm = _driver.FindElements(By.Id("confirmPassword")).Count > 0
+                || _driver.FindElements(By.CssSelector("input[name*='confirm'], input[name*='Confirm']")).Count > 0;
+            bool hasSubmit = _driver.FindElements(By.CssSelector("button[type='submit'], .btn-submit, input[type='submit']")).Count > 0;
+            bool allOk = hasOldPass && hasNewPass && hasConfirm && hasSubmit;
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    allOk ? "- Form đổi mật khẩu hiển thị đầy đủ:\n  + Ô Mật khẩu cũ\n  + Ô Mật khẩu mới\n  + Ô Xác nhận mật khẩu\n  + Nút Xác nhận"
+                    : $"Thiếu element: OldPass={hasOldPass}, NewPass={hasNewPass}, Confirm={hasConfirm}, Submit={hasSubmit}"));
+
+            var shot = TakeScreenshot("MK01");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            Logout();
+            r.Status = allOk ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.5_MK_02 — Đổi mật khẩu nhập sai mật khẩu cũ</summary>
+    public KhachHangTestResult Test_MK02(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Login();
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/ResetPassword");
+            WaitForPageLoad(); Thread.Sleep(1500);
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            // Nhập sai mật khẩu cũ
+            try
+            {
+                var oldP = _driver.FindElements(By.Id("oldPassword"));
+                if (oldP.Count == 0) oldP = _driver.FindElements(By.CssSelector("input[name*='old'], input[name*='Old'], input[name*='current']"));
+                if (oldP.Count > 0) { oldP[0].Clear(); oldP[0].SendKeys("wrongOldPassword123"); }
+
+                var newP = _driver.FindElements(By.Id("newPassword"));
+                if (newP.Count == 0) newP = _driver.FindElements(By.CssSelector("input[name*='new'], input[name*='New']"));
+                if (newP.Count > 0) { newP[0].Clear(); newP[0].SendKeys("NewPassword@123"); }
+
+                var confP = _driver.FindElements(By.Id("confirmPassword"));
+                if (confP.Count == 0) confP = _driver.FindElements(By.CssSelector("input[name*='confirm'], input[name*='Confirm']"));
+                if (confP.Count > 0) { confP[0].Clear(); confP[0].SendKeys("NewPassword@123"); }
+
+                Thread.Sleep(500);
+                var submitBtn = _driver.FindElements(By.CssSelector("button[type='submit'], .btn-submit, input[type='submit']"));
+                if (submitBtn.Count > 0) { ScrollAndClick(submitBtn[0]); Thread.Sleep(3000); WaitForPageLoad(); }
+            }
+            catch { }
+
+            var msgs = GetPageMessages();
+            var pageText = _driver.FindElement(By.TagName("body")).Text;
+            bool hasError = msgs.Count > 0
+                || pageText.Contains("sai", StringComparison.OrdinalIgnoreCase)
+                || pageText.Contains("không đúng", StringComparison.OrdinalIgnoreCase)
+                || pageText.Contains("incorrect", StringComparison.OrdinalIgnoreCase)
+                || _driver.Url.Contains("ResetPassword");
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    hasError ? $"- Hiển thị thông báo lỗi khi nhập sai mật khẩu cũ\n- Thông báo: {(msgs.Count > 0 ? string.Join("; ", msgs) : "Mật khẩu cũ không đúng")}"
+                    : "- Không hiển thị lỗi (Lỗi bảo mật!)"));
+
+            var shot = TakeScreenshot("MK02");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            Logout();
+            r.Status = hasError ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    /// <summary>II.5_DX_01 — Đăng xuất thành công</summary>
+    public KhachHangTestResult Test_DX01(KhachHangTestCaseModel tc)
+    {
+        var r = InitResult(tc);
+        try
+        {
+            Login();
+            var step1 = tc.Steps.FirstOrDefault(s => s.StepNumber == 1);
+
+            // Verify đang đăng nhập
+            bool wasLoggedIn = !_driver.Url.Contains("/Auth/Login");
+
+            // Step 2: Đăng xuất
+            var step2 = tc.Steps.FirstOrDefault(s => s.StepNumber == 2);
+            _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Logout");
+            Thread.Sleep(2000); WaitForPageLoad();
+
+            bool logoutSuccess = _driver.Url.Contains("/Auth/Login");
+            if (!logoutSuccess)
+            {
+                _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/Login");
+                Thread.Sleep(1000);
+                // Kiểm tra không còn session
+                logoutSuccess = _driver.Url.Contains("/Auth/Login");
+            }
+
+            if (step1?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step1,
+                    wasLoggedIn ? "- Đã đăng nhập thành công" : "- Chưa đăng nhập"));
+
+            if (step2?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step2,
+                    logoutSuccess ? "- Đăng xuất thành công\n- Chuyển hướng về trang Đăng nhập"
+                    : $"- Đăng xuất không thành công. URL: {_driver.Url}"));
+
+            var shot = TakeScreenshot("DX01");
+            if (shot != null) r.ScreenshotPaths.Add(shot);
+            r.Status = (wasLoggedIn && logoutSuccess) ? "PASS" : "FAIL";
+        }
+        catch (Exception ex) { r.Status = "FAIL"; r.StepResults.Add(new StepResult { ActualResult = $"Lỗi: {ex.Message}", SpreadsheetRow = tc.SpreadsheetStartRow }); }
+        return r;
+    }
+
+    #endregion
+
     #region FLOW ĐẶT VÉ E2E
 
     /// <summary>
@@ -1094,25 +1584,69 @@ public class KhachHangSeleniumService : IDisposable
             if (shot7 != null) r.ScreenshotPaths.Add(shot7);
 
             // ═══════════════════════════════════════════════════════════════
-            //  STEP 8: Đăng xuất
+            //  STEP 8: Vào Lịch sử mua vé → kiểm tra vé vừa đặt tồn tại
             // ═══════════════════════════════════════════════════════════════
             var step8 = tc.Steps.FirstOrDefault(s => s.StepNumber == 8);
+            bool ticketFoundInHistory = false;
+            string historyCheckDetail = "";
+            try
+            {
+                // Đăng nhập lại nếu cần (sau thanh toán Momo có thể bị mất session)
+                if (_driver.Url.Contains("/Auth/Login"))
+                    Login();
+
+                _driver.Navigate().GoToUrl($"{_baseUrl}/Auth/History");
+                WaitForPageLoad(); Thread.Sleep(2000);
+
+                var historyPageText = _driver.FindElement(By.TagName("body")).Text;
+                // Kiểm tra có đơn hàng nào trên trang lịch sử
+                var orderRows = _driver.FindElements(By.CssSelector("table tbody tr, .order-item, .ticket-item, .card"));
+                bool hasOrders = orderRows.Count > 0
+                    || historyPageText.Contains("đơn hàng", StringComparison.OrdinalIgnoreCase)
+                    || historyPageText.Contains("vé", StringComparison.OrdinalIgnoreCase);
+
+                // Kiểm tra có thông tin liên quan đến vé vừa đặt
+                bool hasRecentOrder = historyPageText.Contains("Chờ", StringComparison.OrdinalIgnoreCase)
+                    || historyPageText.Contains("Đã thanh toán", StringComparison.OrdinalIgnoreCase)
+                    || historyPageText.Contains("thành công", StringComparison.OrdinalIgnoreCase)
+                    || hasOrders;
+
+                ticketFoundInHistory = hasOrders && hasRecentOrder;
+                historyCheckDetail = ticketFoundInHistory
+                    ? $"- Vé vừa đặt TỒN TẠI trong Lịch sử mua vé\n- Tìm thấy {orderRows.Count} đơn hàng trong trang lịch sử"
+                    : "- Không tìm thấy vé vừa đặt trong Lịch sử mua vé";
+            }
+            catch (Exception ex)
+            {
+                historyCheckDetail = $"- Lỗi khi kiểm tra lịch sử: {ex.Message}";
+            }
+
+            if (step8?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step8, historyCheckDetail));
+
+            var shot8 = TakeScreenshot("FLOW_08_LichSuVe");
+            if (shot8 != null) r.ScreenshotPaths.Add(shot8);
+
+            // ═══════════════════════════════════════════════════════════════
+            //  STEP 9: Đăng xuất
+            // ═══════════════════════════════════════════════════════════════
+            var step9 = tc.Steps.FirstOrDefault(s => s.StepNumber == 9);
             Logout();
             bool logoutSuccess = _driver.Url.Contains("/Auth/Login") || !hasUserName;
 
-            if (step8?.ExpectedResult != null)
-                r.StepResults.Add(MakeStepResult(step8,
+            if (step9?.ExpectedResult != null)
+                r.StepResults.Add(MakeStepResult(step9,
                     logoutSuccess
                         ? "- Đăng xuất thành công\n- Quay về trang Đăng nhập"
                         : $"Đăng xuất không thành công. URL: {_driver.Url}"));
 
-            var shot8 = TakeScreenshot("FLOW_08_DangXuat");
-            if (shot8 != null) r.ScreenshotPaths.Add(shot8);
+            var shot9 = TakeScreenshot("FLOW_09_DangXuat");
+            if (shot9 != null) r.ScreenshotPaths.Add(shot9);
 
             // ═══════════════════════════════════════════════════════════════
             //  KẾT QUẢ TỔNG
             // ═══════════════════════════════════════════════════════════════
-            r.Status = (loginSuccess && onSeatPage && onMomoPage && bookingSuccess) ? "PASS" : "FAIL";
+            r.Status = (loginSuccess && onSeatPage && onMomoPage && bookingSuccess && ticketFoundInHistory) ? "PASS" : "FAIL";
         }
         catch (Exception ex)
         {

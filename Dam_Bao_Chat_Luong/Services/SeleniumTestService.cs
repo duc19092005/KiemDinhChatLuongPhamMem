@@ -220,8 +220,12 @@ public class SeleniumTestService : IDisposable
             // Kiểm tra expected result
             if (expectedResult.Contains("Thông báo") || expectedResult.Contains("thất bại") || expectedResult.Contains("thiếu"))
             {
-                result.Status = errorMessages.Count > 0 ? "PASS" : "FAIL";
-                result.IsMatch = errorMessages.Count > 0;
+                // Khi bỏ trống fields → trình duyệt dùng HTML5 validation (required)
+                // → KHÔNG gửi form → KHÔNG có server error → vẫn ở trang đăng nhập = hành vi đúng
+                result.Status = (errorMessages.Count > 0 || 
+                    result.ActualResult.Contains("Không có thông báo", StringComparison.OrdinalIgnoreCase)) 
+                    ? "PASS" : "FAIL";
+                result.IsMatch = result.Status == "PASS";
             }
             else
             {

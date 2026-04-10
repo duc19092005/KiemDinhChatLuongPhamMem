@@ -5,10 +5,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Dam_Bao_Chat_Luong.Tests.KhachHang;
 
 /// <summary>
-/// Test đăng ký tài khoản: II.1_DK_01, II.1_DK_02
+/// Test điều hướng (Navigation): II.6_NAV_01 → II.6_NAV_04
 /// </summary>
 [TestClass]
-public class DangKyTests
+public class NavigationTests
 {
     private KhachHangSeleniumService _selenium = null!;
     private KhachHangExcelReaderService _reader = null!;
@@ -28,14 +28,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
-    [Description("II.1_DK_01: Đăng ký tài khoản khách hàng thành công")]
-    public async Task Test_II1_DK01_DangKy_ThanhCong()
+    [TestCategory("GUI")]
+    [TestCategory("Navigation")]
+    [Description("II.6_NAV_01: Kiểm tra Navbar hiển thị đúng sau đăng nhập")]
+    public async Task Test_II6_NAV01_Navbar_HienThi()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_01");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_01");
+        var tc = await _reader.GetTestCaseById("II.6_NAV_01");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.6_NAV_01");
 
-        var result = _selenium.Test_DK01(tc);
+        var result = _selenium.Test_NAV01(tc);
         await _writer.WriteTestResult(result);
 
         Console.WriteLine($"  Status: {result.Status}");
@@ -48,14 +49,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
-    [Description("II.1_DK_02: Đăng ký thất bại do trùng Email/SĐT")]
-    public async Task Test_II1_DK02_DangKy_TrungEmail()
+    [TestCategory("GUI")]
+    [TestCategory("Navigation")]
+    [Description("II.6_NAV_02: Điều hướng đến tất cả trang từ navbar")]
+    public async Task Test_II6_NAV02_DieuHuong_TatCaTrang()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_02");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_02");
+        var tc = await _reader.GetTestCaseById("II.6_NAV_02");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.6_NAV_02");
 
-        var result = _selenium.Test_DK02(tc);
+        var result = _selenium.Test_NAV02(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,
@@ -64,15 +66,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
     [TestCategory("GUI")]
-    [Description("II.1_DK_03: Đăng ký thất bại do mật khẩu không khớp")]
-    public async Task Test_II1_DK03_DangKy_MatKhauKhongKhop()
+    [TestCategory("Navigation")]
+    [Description("II.6_NAV_03: Trang Về chúng tôi hiển thị đúng")]
+    public async Task Test_II6_NAV03_VeChungToi()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_03");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_03");
+        var tc = await _reader.GetTestCaseById("II.6_NAV_03");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.6_NAV_03");
 
-        var result = _selenium.Test_DK03(tc);
+        var result = _selenium.Test_NAV03(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,
@@ -81,15 +83,15 @@ public class DangKyTests
 
     [TestMethod]
     [TestCategory("KhachHang")]
-    [TestCategory("DangKy")]
     [TestCategory("GUI")]
-    [Description("II.1_DK_04: Đăng ký thất bại khi để trống tất cả fields")]
-    public async Task Test_II1_DK04_DangKy_TrongTatCa()
+    [TestCategory("Navigation")]
+    [Description("II.6_NAV_04: Trang Lịch trình hiển thị đúng")]
+    public async Task Test_II6_NAV04_LichTrinh()
     {
-        var tc = await _reader.GetTestCaseById("II.1_DK_04");
-        Assert.IsNotNull(tc, "Không tìm thấy test case II.1_DK_04");
+        var tc = await _reader.GetTestCaseById("II.6_NAV_04");
+        Assert.IsNotNull(tc, "Không tìm thấy test case II.6_NAV_04");
 
-        var result = _selenium.Test_DK04(tc);
+        var result = _selenium.Test_NAV04(tc);
         await _writer.WriteTestResult(result);
 
         Assert.AreEqual("PASS", result.Status,
