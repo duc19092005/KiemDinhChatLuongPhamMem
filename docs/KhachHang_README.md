@@ -14,71 +14,85 @@ Dam_Bao_Chat_Luong/
 │   ├── KhachHangTestCaseModel.cs   # Model map với cấu trúc dòng/cột Google Spreadsheet
 │   └── KhachHangTestResult.cs      # Model kết quả test của từng bộ Step
 ├── Services/KhachHang/
-│   ├── KhachHangExcelReaderService.cs   # Đọc kịch bản đầu vào từ Google Sheets
-│   ├── KhachHangExcelWriterService.cs   # Cập nhật kết quả chi tiết, merge cell, upload hình ảnh báo cáo (Google Drive)
-│   └── KhachHangSeleniumService.cs      # Chứa "Bộ não" thao tác Automation (Chứa cả Fallback JS cho Click)
+│   ├── KhachHangExcelReaderService.cs # Đọc kịch bản đầu vào từ Google Sheets
+│   ├── KhachHangExcelWriterService.cs # Cập nhật kết quả chi tiết kèm Screenshot (Google Drive)
+│   ├── KhachHangSeleniumService.cs    # Chứa logic Selenium thao tác Automation & Fallback JS
+│   └── KhachHangTestCaseAppender.cs   # [MỚI] Tự động append test cases mới lên Spreadsheet
+```
 
+```text
 Dam_Bao_Chat_Luong.Tests/KhachHang/
-├── DangKyTests.cs           # Test đăng ký mới, trùng email (II.1)
+├── DangKyTests.cs           # Test đăng ký mới, mật khẩu không khớp, bỏ trống (II.1)
+├── DangNhapGuiTests.cs      # [MỚI] Test GUI Đăng nhập: UI, Thiếu field, Sai MK (II.1)
 ├── ChuyenHuongTests.cs      # Test chuyển hướng login an toàn (II.2)
 ├── TimKiemTests.cs          # Test logic bộ lọc tìm kiếm (II.3)
 ├── DatVeTests.cs            # Test chọn ghế, tự động điền info, thanh toán (II.4)
-├── QuanLyTaiKhoanTests.cs   # Lịch sử, Xem thông tin, Sửa thông tin cá nhân (II.5)
-└── FlowDatVeTests.cs        # Mô phỏng liên hoàn E2E 8 bước thực tế (II.6)
+├── QuanLyTaiKhoanTests.cs   # Lịch sử, Đổi MK, Đăng xuất, Sửa thông tin (II.5)
+├── NavigationTests.cs       # [MỚI] Test Navbar và điều hướng trang (II.6)
+├── FlowDatVeTests.cs        # Mô phỏng liên hoàn E2E 9 BƯỚC (II.6)
+└── SpreadsheetSetupTests.cs # [MỚI] Helper để khởi tạo test cases trên Sheets
 ```
-
-> **Lưu ý:** Trước đây dự án dùng file gộp Standalone `Gop_Test_FlowDatVe.cs`, nhưng hiện tại các logic cốt lõi như *Thuật toán Vượt chặn Click Ghế bằng JS* đều đã được hợp nhất chuẩn xác vào `KhachHangSeleniumService.cs` và các file Test Module riêng lẻ phía trên để đảm bảo kiến trúc sạch (Clean Architecture) và tối ưu khả năng bảo trì.
 
 ---
 
-## 2. Danh sách Kịch bản (Test Cases)
+## 2. Danh sách Kịch bản (Test Cases) mở rộng
 
-Toàn bộ 14 hàm Test Case liên quan đã hoàn thành bao gồm:
+Dưới đây là danh sách các kịch bản quan trọng mới được bổ sung và cập nhật:
 
-| Phân hệ | Requirement ID | Test Case ID | Hàm trong Selenium Service | Mô tả kịch bản | Nơi thực thi (Class) |
-|---|---|---|---|---|---|
-| Đăng ký | II.1_DangKy | II.1_DK_01 | `Test_DK01` | Đăng ký tài khoản khách hàng thành công | DangKyTests.cs |
-| Đăng ký | II.1_DangKy | II.1_DK_02 | `Test_DK02` | Đăng ký thất bại do trùng Email/SĐT | DangKyTests.cs |
-| Chuyển hướng | II.2_ChuyenHuong | II.2_CH_01 | `Test_CH01` | Chuyển hướng đúng về trang đặt vé sau đăng nhập | ChuyenHuongTests.cs |
-| Tìm kiếm | II.3_TimKiem | II.3_TK_01 | `Test_TK01` | Tìm kiếm chuyến xe hợp lệ | TimKiemTests.cs |
-| Tìm kiếm | II.3_TimKiem | II.3_TK_02 | `Test_TK02` | Tìm kiếm với ngày đi trong quá khứ | TimKiemTests.cs |
-| Tìm kiếm | II.3_TimKiem | II.3_TK_03 | `Test_TK03` | Không tìm thấy chuyến xe (Trả về Empty) | TimKiemTests.cs |
-| **Đặt vé** | **II.4_DatVe** | **II.4_CG_01** | `Test_CG01` | **Chọn ghế trên sơ đồ và tính tiền tự động** | DatVeTests.cs |
-| **Đặt vé** | **II.4_DatVe** | **II.4_CG_02** | `Test_CG02` | **Không cho phép chọn ghế đã bán** | DatVeTests.cs |
-| **Đặt vé** | **II.4_DatVe** | **II.4_TT_01** | `Test_TT01` | **Thông tin hành khách được tự động điền** | DatVeTests.cs |
-| **Đặt vé** | **II.4_DatVe** | **II.4_TT_02** | `Test_TT02` | **Đặt vé và Thanh toán Momo thành công** | DatVeTests.cs |
-| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_LS_01 | `Test_LS01` | Xem lịch sử đặt vé | QuanLyTaiKhoanTests.cs |
-| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_CN_01 | `Test_CN01` | Xem thông tin cá nhân | QuanLyTaiKhoanTests.cs |
-| Tài Khoản | II.5_QuanLyTaiKhoan | II.5_ECN01 | `Test_ECN01` | Chỉnh sửa thông tin cá nhân | QuanLyTaiKhoanTests.cs |
-| **Flow E2E** | **II.6_FlowDatVe** | **II.6_FLOW_01** | `Test_Flow_DatVe_E2E` | **Toàn trình: Đăng nhập → Chọn chuyến → Chọn ghế → Momo → Đăng xuất** | FlowDatVeTests.cs |
+### 2.1. Nhóm Đăng ký & Đăng nhập (Mở rộng)
+| Requirement ID | Test Case ID | Hàm Service | Mô tả kịch bản | Nơi thực thi |
+|---|---|---|---|---|
+| II.1_DangKy | II.1_DK_03 | `Test_DK03` | Đăng ký thất bại: Mật khẩu không khớp | DangKyTests.cs |
+| II.1_DangKy | II.1_DK_04 | `Test_DK04` | Đăng ký thất bại: Bỏ trống tất cả fields | DangKyTests.cs |
+| II.1_DangNhap | II.1_LG_01 | `Test_LG01` | Kiểm tra giao diện form Đăng nhập | DangNhapGuiTests.cs |
+| II.1_DangNhap | II.1_LG_02 | `Test_LG02` | Đăng nhập để trống Email | DangNhapGuiTests.cs |
+| II.1_DangNhap | II.1_LG_03 | `Test_LG03` | Đăng nhập để trống Mật khẩu | DangNhapGuiTests.cs |
+| II.1_DangNhap | II.1_LG_04 | `Test_LG04` | Đăng nhập sai mật khẩu | DangNhapGuiTests.cs |
+
+### 2.2. Nhóm Navigation & Quản lý
+| Requirement ID | Test Case ID | Hàm Service | Mô tả kịch bản | Nơi thực thi |
+|---|---|---|---|---|
+| II.6_Navigation | II.6_NAV_01 | `Test_NAV01` | Kiểm tra Navbar hiển thị đúng sau login | NavigationTests.cs |
+| II.6_Navigation | II.6_NAV_02 | `Test_NAV02` | Điều hướng đến tất cả trang từ Navbar | NavigationTests.cs |
+| II.6_Navigation | II.6_NAV_03 | `Test_NAV03` | Kiểm tra trang Về chúng tôi | NavigationTests.cs |
+| II.6_Navigation | II.6_NAV_04 | `Test_NAV04` | Kiểm tra trang Lịch trình | NavigationTests.cs |
+| II.5_QuanLy | II.5_MK_01 | `Test_MK01` | Kiểm tra form đổi mật khẩu hiển thị | QuanLyTaiKhoanTests.cs |
+| II.5_QuanLy | II.5_MK_02 | `Test_MK02` | Đổi MK: Nhập sai mật khẩu cũ | QuanLyTaiKhoanTests.cs |
+| II.5_QuanLy | II.5_DX_01 | `Test_DX01` | Đăng xuất thành công | QuanLyTaiKhoanTests.cs |
+
+### 2.3. Flow Đặt Vé E2E (9 Bước)
+Đã nâng cấp từ 8 bước lên **9 bước**, thêm bước xác thực quan trọng tại trang Lịch sử.
+- **Hành động**: Đăng nhập → Chọn chuyến → Chọn ghế → Thanh toán MoMo → **Kiểm tra lịch sử vé** → Đăng xuất.
+- **Mã test**: `II.6_FLOW_01` thực thi trong `FlowDatVeTests.cs`.
 
 ---
 
 ## 3. Câu lệnh Terminal thực thi kiểm thử
 
-Mở Terminal tại thư mục Root (nơi chứa file đuôi `.sln`) để chạy các lệnh chuyên biệt sau:
+Mở Terminal tại thư mục Root để chạy các lệnh chuyên biệt sau:
 
 ```bash
-# 1. Chạy TẤT CẢ các kịch bản của toàn bộ Cụm Khách Hàng (Tầm 14 Test Cases)
+# [QUAN TRỌNG] Bước 0: Tạo/Cập nhật test cases lên Spreadsheet (Chạy 1 lần)
+dotnet test --filter "TestCategory=Setup"
+
+# 1. Chạy TẤT CẢ các kịch bản Khách Hàng (bao gồm E2E)
 dotnet test --filter "TestCategory=KhachHang" --logger "console;verbosity=detailed"
 
-# 2. CHỈ chạy nhánh xử lý Đặt Vé, Chọn Ghế và Thanh toán (rất quan trọng)
-dotnet test --filter "TestCategory=DatVe|TestCategory=FlowDatVe" --logger "console;verbosity=detailed"
+# 2. Chạy tất cả TRỪ luồng E2E 9 bước
+dotnet test --filter "TestCategory=KhachHang&TestCategory!=E2E" --logger "console;verbosity=detailed"
 
-# 3. CHỈ chạy nhánh các luồng còn lại (Đăng ký, Chuyển hướng, Tìm kiếm, Quản lý tài khoản)
-dotnet test --filter "TestCategory=DangKy"
-dotnet test --filter "TestCategory=ChuyenHuong"
-dotnet test --filter "TestCategory=TimKiem"
-dotnet test --filter "TestCategory=QuanLy"
+# 3. CHỈ chạy luồng E2E 9 bước (Mô phỏng xuyên suốt)
+dotnet test --filter "TestCategory=E2E" --logger "console;verbosity=detailed"
 
-# 4. CHỈ chạy đích danh luồng siêu dài E2E (Mô phỏng y hệt thật - Xuyên suốt vòng đời Booking)
-dotnet test --filter "TestCategory=FlowDatVe" --logger "console;verbosity=detailed"
+# 4. Chạy theo nhóm GUI mới
+dotnet test --filter "TestCategory=GUI"
 ```
 
 ---
 
 ## 4. Ghi chú cốt lõi (Core Implementations)
 
-- **Cơ chế Vượt chặn Ghế bằng JS (Fallback JS Click)**: Trong bộ `KhachHangSeleniumService.cs`, nếu thuật toán Selenium gặp lỗi che khuất Element (`Element Intercepted Exception`) lúc bấm nút thanh toán hoặc tương tác ghế ngồi, hệ thống sẽ tự động invoke ngược lệnh Browser `IJavaScriptExecutor` để can thiệp ép nhận diện hành động một cách an toàn.
-- **Tự động hóa ScreenCapture**: Khi qua từng chặng Test thành công hoặc gặp lỗi, Auto-Screenshot được kích hoạt, lưu vào `/Screenshots/KhachHang` và được Upload thẳng lên folder *Google Drive*, link ảnh `=`IMAGE()` sau chót sẽ rớt xuống ngược lại vào Cột Notes trên Spreadsheet.
-- **Tự động Tracking Data Ảo**: Khắc phục "Tài khoản tồn tại" trong DB bằng cách Automation sẽ sinh ngẫu nhiên Random string `yyyyMMdd` gắn vào Prefix `email`. Data ảo được khai sinh này ngay lập tức sẽ được log đè ngược lại cột `Test Data` để tester biết Account nào vừa được sử dụng cho Unit Testing.
+- **Cơ chế xác thực Lịch sử (Step 8 E2E)**: Sau khi thanh toán, hệ thống tự động điều hướng vào `/Auth/History` để tìm kiếm mã vé hoặc thông tin chuyến xe vừa đặt, đảm bảo dữ liệu đã được lưu thành công vào Database.
+- **Khởi tạo Spreadsheet tự động**: `KhachHangTestCaseAppender` cho phép developer thêm kịch bản test mới vào code và tự động "đẩy" chúng lên Google Sheets mà không cần thao tác tay, tránh lỗi sai ID hoặc sai định dạng.
+- **Cơ chế Vượt chặn Ghế bằng JS**: Vẫn được duy trì để xử lý các UI phức tạp trên trang Chọn Ghế khi Selenium click thông thường bị chặn.
+- **Quản lý phiên (Session Management)**: Luôn kết thúc bằng hành động Logout (`Test_DX01`) để đảm bảo các bài test sau không bị dính session của bài test trước.
